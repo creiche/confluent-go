@@ -19,7 +19,13 @@ func NewACLManager(c *client.Client) *ACLManager {
 	return &ACLManager{client: c}
 }
 
-// ListACLs lists all ACLs in a cluster.
+// ListACLs lists all ACL bindings in a cluster.
+// Returns all access control list entries for the specified Kafka cluster.
+// Returns errors:
+//   - *api.Error with IsNotFound() if cluster does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (am *ACLManager) ListACLs(ctx context.Context, clusterID string) ([]api.ACLBinding, error) {
 	req := client.Request{
 		Method: "GET",
@@ -41,7 +47,14 @@ func (am *ACLManager) ListACLs(ctx context.Context, clusterID string) ([]api.ACL
 	return result.Data, nil
 }
 
-// CreateACL creates a new ACL binding.
+// CreateACL creates a new ACL binding to grant or deny permissions.
+// ACLs control access to Kafka resources such as topics, consumer groups, and clusters.
+// Returns errors:
+//   - *api.Error with IsBadRequest() if ACL parameters are invalid
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsConflict() if ACL already exists
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (am *ACLManager) CreateACL(ctx context.Context, clusterID string, acl api.ACLBinding) error {
 	body := map[string]interface{}{
 		"resource_type": acl.ResourceType,
@@ -66,7 +79,13 @@ func (am *ACLManager) CreateACL(ctx context.Context, clusterID string, acl api.A
 	return nil
 }
 
-// DeleteACL deletes an ACL binding.
+// DeleteACL deletes an ACL binding matching the specified criteria.
+// Multiple ACLs may be deleted if they match the provided filters.
+// Returns errors:
+//   - *api.Error with IsNotFound() if no matching ACL exists
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (am *ACLManager) DeleteACL(ctx context.Context, clusterID string, principal string, operation string, resourceType string, resourceName string) error {
 	req := client.Request{
 		Method: "DELETE",
