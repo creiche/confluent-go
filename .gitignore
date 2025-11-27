@@ -1,0 +1,10 @@
+.DS_Store
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+dist/
+coverage.out
+coverage.html
+*.test
