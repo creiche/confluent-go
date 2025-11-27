@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/creiche/confluent-go/pkg/api"
 	"github.com/creiche/confluent-go/pkg/client"
@@ -27,7 +28,7 @@ func NewClusterManager(c *client.Client) *ClusterManager {
 func (cm *ClusterManager) ListClusters(ctx context.Context, environmentID string) ([]api.Cluster, error) {
 	req := client.Request{
 		Method: "GET",
-		Path:   fmt.Sprintf("/cmk/v2/clusters?environment=%s", environmentID),
+		Path:   fmt.Sprintf("/cmk/v2/clusters?environment=%s", url.QueryEscape(environmentID)),
 	}
 
 	resp, err := cm.client.Do(ctx, req)

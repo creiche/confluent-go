@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/creiche/confluent-go/pkg/api"
 	"github.com/creiche/confluent-go/pkg/client"
@@ -70,7 +71,7 @@ func (am *ACLManager) DeleteACL(ctx context.Context, clusterID string, principal
 	req := client.Request{
 		Method: "DELETE",
 		Path: fmt.Sprintf("/kafka/v3/clusters/%s/acls?principal=%s&operation=%s&resource_type=%s&resource_name=%s",
-			clusterID, principal, operation, resourceType, resourceName),
+			clusterID, url.QueryEscape(principal), url.QueryEscape(operation), url.QueryEscape(resourceType), url.QueryEscape(resourceName)),
 	}
 
 	_, err := am.client.Do(ctx, req)

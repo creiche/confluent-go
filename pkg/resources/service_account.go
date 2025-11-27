@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/creiche/confluent-go/pkg/api"
 	"github.com/creiche/confluent-go/pkg/client"
@@ -160,7 +161,7 @@ func (sam *ServiceAccountManager) CreateAPIKey(ctx context.Context, serviceAccou
 func (sam *ServiceAccountManager) ListAPIKeys(ctx context.Context, serviceAccountID string) ([]api.APIKey, error) {
 	req := client.Request{
 		Method: "GET",
-		Path:   fmt.Sprintf("/iam/v2/api-keys?owner=%s", serviceAccountID),
+		Path:   fmt.Sprintf("/iam/v2/api-keys?owner=%s", url.QueryEscape(serviceAccountID)),
 	}
 
 	resp, err := sam.client.Do(ctx, req)

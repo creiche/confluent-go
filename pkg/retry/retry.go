@@ -190,13 +190,8 @@ func secureRandUnitFloat64() (float64, error) {
 		return 0, err
 	}
 	u := binary.LittleEndian.Uint64(b[:])
-	// Scale to [0,1). Using MaxUint64 as divisor yields [0,1]; subtract epsilon to keep < 1.
-	const denom = float64(^uint64(0)) // math.MaxUint64
-	f := float64(u) / denom
-	if f == 1.0 {
-		f = math.Nextafter(1.0, 0.0)
-	}
-	return f, nil
+	// Scale to [0,1) by dividing by 2^64
+	return float64(u) / (1 << 64), nil
 }
 
 // DefaultRetryableErrors returns true for errors that should be retried:
@@ -226,7 +221,9 @@ func AggressiveRetryableErrors(err *api.Error) bool {
 // - 429 (Rate Limited)
 // - 503 (Service Unavailable)
 // - 504 (Gateway Timeout)
-// Does not retry on 500, 502, etc. as they may indicate persistent issues.
+//
+// Does not retry on 500, 502, etc. as they may indicate persistent issues,
+// unlike AggressiveRetryableErrors which retries all 5xx errors.
 func ConservativeRetryableErrors(err *api.Error) bool {
 	if err == nil {
 		return false
