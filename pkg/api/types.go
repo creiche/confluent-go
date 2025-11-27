@@ -1,7 +1,8 @@
 // Package api defines the data types and interfaces for Confluent resources.
 package api
 
-// Cluster represents a Confluent Kafka cluster.
+// Cluster represents a Confluent Kafka cluster with its configuration and status.
+// Clusters can be BASIC, STANDARD, or DEDICATED types.
 type Cluster struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
@@ -13,7 +14,7 @@ type Cluster struct {
 	Type             string `json:"type"` // BASIC, STANDARD, DEDICATED
 }
 
-// Topic represents a Kafka topic.
+// Topic represents a Kafka topic with its partition and replication configuration.
 type Topic struct {
 	Name              string            `json:"name"`
 	PartitionCount    int32             `json:"partition_count"`
@@ -21,13 +22,15 @@ type Topic struct {
 	Config            map[string]string `json:"config"`
 }
 
-// TopicConfig represents topic-level configuration.
+// TopicConfig represents a single topic-level configuration key-value pair.
+// Examples include retention.ms, cleanup.policy, compression.type, etc.
 type TopicConfig struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
-// ServiceAccount represents a Confluent service account.
+// ServiceAccount represents a Confluent service account used for programmatic access.
+// Service accounts can own API keys and be granted permissions via ACLs.
 type ServiceAccount struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -35,7 +38,8 @@ type ServiceAccount struct {
 	Resource    Resource `json:"resource"`
 }
 
-// APIKey represents an API key for authentication.
+// APIKey represents an API key for authentication to Confluent Cloud and Platform.
+// The Secret field is only populated during creation and cannot be retrieved later.
 type APIKey struct {
 	ID          string  `json:"id"`
 	Secret      string  `json:"secret"`
@@ -45,7 +49,8 @@ type APIKey struct {
 	ExpiresAt   *string `json:"expires_at"`
 }
 
-// ACLBinding represents an access control list binding.
+// ACLBinding represents an access control list entry that grants or denies permissions.
+// ACLs control access to Kafka resources like topics, consumer groups, and clusters.
 type ACLBinding struct {
 	Principal    string `json:"principal"` // "User:12345" or "User:*"
 	ResourceType string `json:"resource_type"`
@@ -55,14 +60,16 @@ type ACLBinding struct {
 	Permission   string `json:"permission"` // ALLOW, DENY
 }
 
-// Environment represents a Confluent environment.
+// Environment represents a Confluent environment, which is a logical grouping for clusters and resources.
+// Environments provide isolation and organization for multi-tenant deployments.
 type Environment struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	DisplayName string `json:"display_name"`
 }
 
-// RoleBinding represents a role assignment to a principal.
+// RoleBinding represents a role assignment to a principal (user or service account).
+// Role bindings grant permissions at the organization, environment, or cluster level.
 type RoleBinding struct {
 	ID          string `json:"id"`
 	PrincipalID string `json:"principal_id"`
@@ -70,26 +77,30 @@ type RoleBinding struct {
 	CRN         string `json:"crn"` // Confluent Resource Name
 }
 
-// Role represents a Confluent role (e.g., OrganizationAdmin, EnvironmentAdmin).
+// Role represents a Confluent role that defines a set of permissions.
+// Common roles include OrganizationAdmin, EnvironmentAdmin, CloudClusterAdmin, etc.
 type Role struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// Resource represents a Confluent resource reference.
+// Resource represents a reference to a Confluent resource.
+// Used to link entities like service accounts, users, and API keys.
 type Resource struct {
 	ID   string `json:"id"`
 	Type string `json:"type"` // USER, SERVICE_ACCOUNT, etc.
 }
 
-// BrokerConfig represents broker-level configuration.
+// BrokerConfig represents a broker-level configuration setting.
+// Broker configs apply to individual Kafka brokers within a cluster.
 type BrokerConfig struct {
 	BrokerID string `json:"broker_id"`
 	Name     string `json:"name"`
 	Value    string `json:"value"`
 }
 
-// PartitionInfo represents information about a partition.
+// PartitionInfo represents metadata about a Kafka topic partition.
+// Includes leader, replicas, and in-sync replica information.
 type PartitionInfo struct {
 	Topic     string  `json:"topic"`
 	Partition int32   `json:"partition"`
@@ -98,14 +109,16 @@ type PartitionInfo struct {
 	ISR       []int32 `json:"isr"` // In-Sync Replicas
 }
 
-// SchemaSubject represents a schema subject (for Schema Registry).
+// SchemaSubject represents a subject in Confluent Schema Registry.
+// A subject typically corresponds to a topic and contains multiple schema versions.
 type SchemaSubject struct {
 	Name     string  `json:"name"`
 	Versions []int32 `json:"versions"`
 	Latest   *Schema `json:"latest"`
 }
 
-// Schema represents a schema registered in Schema Registry.
+// Schema represents a versioned schema in Confluent Schema Registry.
+// Schemas can be AVRO, JSON_SCHEMA, or PROTOBUF format.
 type Schema struct {
 	ID         int32             `json:"id"`
 	Subject    string            `json:"subject"`
@@ -115,14 +128,16 @@ type Schema struct {
 	References []SchemaReference `json:"references"`
 }
 
-// SchemaReference represents a reference to another schema.
+// SchemaReference represents a reference from one schema to another.
+// Used to model schema dependencies and composition.
 type SchemaReference struct {
 	Name    string `json:"name"`
 	Subject string `json:"subject"`
 	Version int32  `json:"version"`
 }
 
-// ConnectorConfig represents a Kafka Connect connector.
+// ConnectorConfig represents a Kafka Connect connector configuration.
+// Connectors can be SOURCE (producing to Kafka) or SINK (consuming from Kafka).
 type ConnectorConfig struct {
 	Name   string            `json:"name"`
 	Config map[string]string `json:"config"`
@@ -132,14 +147,16 @@ type ConnectorConfig struct {
 	Topics []string          `json:"topics"`
 }
 
-// ConnectorStatus represents the status of a connector.
+// ConnectorStatus represents the current state of a Kafka Connect connector.
+// Includes the overall state and status of individual tasks.
 type ConnectorStatus struct {
 	State  string           `json:"state"`
 	Tasks  []TaskStatus     `json:"tasks"`
 	Errors []ConnectorError `json:"errors"`
 }
 
-// TaskStatus represents the status of a connector task.
+// TaskStatus represents the status of an individual connector task.
+// Each connector can have multiple tasks running in parallel.
 type TaskStatus struct {
 	ID     int32  `json:"id"`
 	State  string `json:"state"`
@@ -147,7 +164,7 @@ type TaskStatus struct {
 	Error  string `json:"error"`
 }
 
-// ConnectorError represents an error for a connector.
+// ConnectorError represents an error that occurred in a connector or task.
 type ConnectorError struct {
 	Message string `json:"message"`
 }

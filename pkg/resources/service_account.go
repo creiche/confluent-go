@@ -20,6 +20,11 @@ func NewServiceAccountManager(c *client.Client) *ServiceAccountManager {
 }
 
 // ListServiceAccounts lists all service accounts in the organization.
+// Returns all service accounts that the authenticated user has access to.
+// Returns errors:
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) ListServiceAccounts(ctx context.Context) ([]api.ServiceAccount, error) {
 	req := client.Request{
 		Method: "GET",
@@ -42,6 +47,11 @@ func (sam *ServiceAccountManager) ListServiceAccounts(ctx context.Context) ([]ap
 }
 
 // GetServiceAccount retrieves information about a specific service account.
+// Returns errors:
+//   - *api.Error with IsNotFound() if service account does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) GetServiceAccount(ctx context.Context, serviceAccountID string) (*api.ServiceAccount, error) {
 	req := client.Request{
 		Method: "GET",
@@ -61,7 +71,14 @@ func (sam *ServiceAccountManager) GetServiceAccount(ctx context.Context, service
 	return &account, nil
 }
 
-// CreateServiceAccount creates a new service account.
+// CreateServiceAccount creates a new service account with the specified name and description.
+// The service account can be used to authenticate applications and services.
+// Returns errors:
+//   - *api.Error with IsBadRequest() if parameters are invalid
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsConflict() if service account name already exists
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) CreateServiceAccount(ctx context.Context, name string, description string) (*api.ServiceAccount, error) {
 	body := map[string]interface{}{
 		"display_name": name,
@@ -87,7 +104,13 @@ func (sam *ServiceAccountManager) CreateServiceAccount(ctx context.Context, name
 	return &account, nil
 }
 
-// DeleteServiceAccount deletes a service account.
+// DeleteServiceAccount deletes a service account and all associated API keys.
+// This operation is irreversible. All API keys for this service account will be invalidated.
+// Returns errors:
+//   - *api.Error with IsNotFound() if service account does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) DeleteServiceAccount(ctx context.Context, serviceAccountID string) error {
 	req := client.Request{
 		Method: "DELETE",
@@ -101,7 +124,13 @@ func (sam *ServiceAccountManager) DeleteServiceAccount(ctx context.Context, serv
 	return nil
 }
 
-// UpdateServiceAccount updates a service account.
+// UpdateServiceAccount updates the display name and description of a service account.
+// Returns errors:
+//   - *api.Error with IsNotFound() if service account does not exist
+//   - *api.Error with IsBadRequest() if parameters are invalid
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) UpdateServiceAccount(ctx context.Context, serviceAccountID string, displayName string, description string) (*api.ServiceAccount, error) {
 	body := map[string]interface{}{
 		"display_name": displayName,
@@ -128,6 +157,14 @@ func (sam *ServiceAccountManager) UpdateServiceAccount(ctx context.Context, serv
 }
 
 // CreateAPIKey creates a new API key for a service account.
+// The API key secret is only returned once and cannot be retrieved later.
+// Store it securely immediately after creation.
+// Returns errors:
+//   - *api.Error with IsNotFound() if service account does not exist
+//   - *api.Error with IsBadRequest() if parameters are invalid
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) CreateAPIKey(ctx context.Context, serviceAccountID string, description string) (*api.APIKey, error) {
 	body := map[string]interface{}{
 		"spec": map[string]interface{}{
@@ -158,6 +195,12 @@ func (sam *ServiceAccountManager) CreateAPIKey(ctx context.Context, serviceAccou
 }
 
 // ListAPIKeys lists all API keys for a service account.
+// Note: API key secrets are not included in the response.
+// Returns errors:
+//   - *api.Error with IsNotFound() if service account does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) ListAPIKeys(ctx context.Context, serviceAccountID string) ([]api.APIKey, error) {
 	req := client.Request{
 		Method: "GET",
@@ -180,6 +223,12 @@ func (sam *ServiceAccountManager) ListAPIKeys(ctx context.Context, serviceAccoun
 }
 
 // DeleteAPIKey deletes an API key.
+// This operation is irreversible. The API key will be immediately invalidated.
+// Returns errors:
+//   - *api.Error with IsNotFound() if API key does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (sam *ServiceAccountManager) DeleteAPIKey(ctx context.Context, apiKeyID string) error {
 	req := client.Request{
 		Method: "DELETE",

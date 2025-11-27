@@ -19,6 +19,11 @@ func NewEnvironmentManager(c *client.Client) *EnvironmentManager {
 }
 
 // ListEnvironments lists all environments in the organization.
+// Returns all environments that the authenticated user has access to.
+// Returns errors:
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (em *EnvironmentManager) ListEnvironments(ctx context.Context) ([]api.Environment, error) {
 	req := client.Request{
 		Method: "GET",
@@ -41,6 +46,11 @@ func (em *EnvironmentManager) ListEnvironments(ctx context.Context) ([]api.Envir
 }
 
 // GetEnvironment retrieves information about a specific environment.
+// Returns errors:
+//   - *api.Error with IsNotFound() if environment does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (em *EnvironmentManager) GetEnvironment(ctx context.Context, environmentID string) (*api.Environment, error) {
 	req := client.Request{
 		Method: "GET",
@@ -60,7 +70,14 @@ func (em *EnvironmentManager) GetEnvironment(ctx context.Context, environmentID 
 	return &environment, nil
 }
 
-// CreateEnvironment creates a new environment.
+// CreateEnvironment creates a new environment with the specified name and display name.
+// Environments are logical groupings for clusters and other resources.
+// Returns errors:
+//   - *api.Error with IsBadRequest() if parameters are invalid
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsConflict() if environment name already exists
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (em *EnvironmentManager) CreateEnvironment(ctx context.Context, name string, displayName string) (*api.Environment, error) {
 	body := map[string]interface{}{
 		"display_name": displayName,
@@ -89,6 +106,13 @@ func (em *EnvironmentManager) CreateEnvironment(ctx context.Context, name string
 }
 
 // DeleteEnvironment deletes an environment.
+// This operation is irreversible. All clusters and resources within the environment must be deleted first.
+// Returns errors:
+//   - *api.Error with IsNotFound() if environment does not exist
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsConflict() if environment contains resources
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (em *EnvironmentManager) DeleteEnvironment(ctx context.Context, environmentID string) error {
 	req := client.Request{
 		Method: "DELETE",
@@ -102,7 +126,13 @@ func (em *EnvironmentManager) DeleteEnvironment(ctx context.Context, environment
 	return nil
 }
 
-// UpdateEnvironment updates an environment.
+// UpdateEnvironment updates the display name of an environment.
+// Returns errors:
+//   - *api.Error with IsNotFound() if environment does not exist
+//   - *api.Error with IsBadRequest() if parameters are invalid
+//   - *api.Error with IsUnauthorized() for authentication failures
+//   - *api.Error with IsForbidden() if user lacks permissions
+//   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (em *EnvironmentManager) UpdateEnvironment(ctx context.Context, environmentID string, displayName string) (*api.Environment, error) {
 	body := map[string]interface{}{
 		"display_name": displayName,
