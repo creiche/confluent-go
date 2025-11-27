@@ -206,9 +206,7 @@ func DefaultRetryableErrors(err *api.Error) bool {
 
 // AggressiveRetryableErrors returns true for a wider set of errors:
 // - 429 (Rate Limited)
-// - 500+ (Server Errors)
-// - 503 (Service Unavailable)
-// - 504 (Gateway Timeout)
+// - All 5xx errors (500-599, including server errors, service unavailable, gateway timeout, etc.)
 func AggressiveRetryableErrors(err *api.Error) bool {
 	if err == nil {
 		return false
