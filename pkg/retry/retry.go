@@ -2,23 +2,23 @@
 package retry
 
 import (
-"context"
-"fmt"
-"math"
-"math/rand"
-"time"
+	"context"
+	"fmt"
+	"math"
+	"math/rand"
+	"time"
 
-"github.com/creiche/confluent-go/pkg/api"
+	"github.com/creiche/confluent-go/pkg/api"
 )
 
 // Strategy defines how retries should be performed.
 type Strategy struct {
-	maxAttempts      int
-	initialBackoff   time.Duration
-	maxBackoff       time.Duration
-	multiplier       float64
-	addJitter        bool
-	retryableErrors  func(*api.Error) bool
+	maxAttempts     int
+	initialBackoff  time.Duration
+	maxBackoff      time.Duration
+	multiplier      float64
+	addJitter       bool
+	retryableErrors func(*api.Error) bool
 }
 
 // DefaultStrategy returns a Strategy with sensible defaults:
@@ -159,35 +159,35 @@ func (s *Strategy) Do(ctx context.Context, operation func() error) error {
 
 // calculateBackoff computes the backoff duration with optional jitter.
 func (s *Strategy) calculateBackoff(attemptsSoFar int) time.Duration {
-// Exponential backoff: initialBackoff * multiplier^attemptsSoFar
-backoff := time.Duration(float64(s.initialBackoff) * math.Pow(s.multiplier, float64(attemptsSoFar)))
+	// Exponential backoff: initialBackoff * multiplier^attemptsSoFar
+	backoff := time.Duration(float64(s.initialBackoff) * math.Pow(s.multiplier, float64(attemptsSoFar)))
 
-// Cap at max backoff
-if backoff > s.maxBackoff {
-backoff = s.maxBackoff
-}
+	// Cap at max backoff
+	if backoff > s.maxBackoff {
+		backoff = s.maxBackoff
+	}
 
-// Add jitter (±20% random variation)
-if s.addJitter {
-jitterFraction := 0.2 // ±20%
-jitterAmount := time.Duration(float64(backoff) * jitterFraction * (2*rand.Float64() - 1))
-backoff = backoff + jitterAmount
-if backoff < 0 {
-backoff = 0
-}
-}
+	// Add jitter (±20% random variation)
+	if s.addJitter {
+		jitterFraction := 0.2 // ±20%
+		jitterAmount := time.Duration(float64(backoff) * jitterFraction * (2*rand.Float64() - 1))
+		backoff = backoff + jitterAmount
+		if backoff < 0 {
+			backoff = 0
+		}
+	}
 
-return backoff
+	return backoff
 }
 
 // DefaultRetryableErrors returns true for errors that should be retried:
 // - 429 (Too Many Requests / Rate Limited)
 // - 500+ (Server Errors)
 func DefaultRetryableErrors(err *api.Error) bool {
-if err == nil {
-return false
-}
-return err.IsRateLimited() || err.IsInternalServerError()
+	if err == nil {
+		return false
+	}
+	return err.IsRateLimited() || err.IsInternalServerError()
 }
 
 // AggressiveRetryableErrors returns true for a wider set of errors:
@@ -196,11 +196,11 @@ return err.IsRateLimited() || err.IsInternalServerError()
 // - 503 (Service Unavailable)
 // - 504 (Gateway Timeout)
 func AggressiveRetryableErrors(err *api.Error) bool {
-if err == nil {
-return false
-}
-code := err.Code
-return code == 429 || (code >= 500 && code <= 599)
+	if err == nil {
+		return false
+	}
+	code := err.Code
+	return code == 429 || (code >= 500 && code <= 599)
 }
 
 // ConservativeRetryableErrors returns true only for transient errors:
@@ -209,9 +209,9 @@ return code == 429 || (code >= 500 && code <= 599)
 // - 504 (Gateway Timeout)
 // Does not retry on 500, 502, etc. as they may indicate persistent issues.
 func ConservativeRetryableErrors(err *api.Error) bool {
-if err == nil {
-return false
-}
-code := err.Code
-return code == 429 || code == 503 || code == 504
+	if err == nil {
+		return false
+	}
+	code := err.Code
+	return code == 429 || code == 503 || code == 504
 }

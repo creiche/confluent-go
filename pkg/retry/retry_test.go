@@ -1,13 +1,13 @@
 package retry_test
 
 import (
-"context"
-"net/http"
-"testing"
-"time"
+	"context"
+	"net/http"
+	"testing"
+	"time"
 
-"github.com/creiche/confluent-go/pkg/api"
-"github.com/creiche/confluent-go/pkg/retry"
+	"github.com/creiche/confluent-go/pkg/api"
+	"github.com/creiche/confluent-go/pkg/retry"
 )
 
 func TestDefaultStrategy(t *testing.T) {
@@ -228,7 +228,7 @@ func TestRetry_ExponentialBackoff(t *testing.T) {
 
 	if elapsed < minExpectedWait || elapsed > maxExpectedWait {
 		t.Logf("Warning: backoff timing may be off. Elapsed: %v, Expected range: %v to %v",
-elapsed, minExpectedWait, maxExpectedWait)
+			elapsed, minExpectedWait, maxExpectedWait)
 	}
 
 	if attempts != 4 {
@@ -360,22 +360,22 @@ func TestRetry_AggressiveRetryableErrors(t *testing.T) {
 func TestRetry_ChainableConfig(t *testing.T) {
 	t.Parallel()
 	strategy := retry.DefaultStrategy().
-WithMaxAttempts(5).
-WithInitialBackoff(500 * time.Millisecond).
-WithMaxBackoff(10 * time.Second).
-WithMultiplier(3.0).
-WithJitter(false)
+		WithMaxAttempts(5).
+		WithInitialBackoff(500 * time.Millisecond).
+		WithMaxBackoff(10 * time.Second).
+		WithMultiplier(3.0).
+		WithJitter(false)
 
-if strategy == nil {
-t.Fatal("Chained configuration returned nil")
-}
+	if strategy == nil {
+		t.Fatal("Chained configuration returned nil")
+	}
 
-// Should return nil error (success)
-err := strategy.Do(context.Background(), func() error {
-return nil
-})
+	// Should return nil error (success)
+	err := strategy.Do(context.Background(), func() error {
+		return nil
+	})
 
-if err != nil {
-t.Fatalf("Expected no error for successful operation: %v", err)
-}
+	if err != nil {
+		t.Fatalf("Expected no error for successful operation: %v", err)
+	}
 }
