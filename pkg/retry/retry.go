@@ -3,9 +3,10 @@ package retry
 
 import (
 	"context"
+	crand "crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"math"
-	"math/rand"
 	"time"
 
 	"github.com/creiche/confluent-go/pkg/api"
@@ -170,14 +171,32 @@ func (s *Strategy) calculateBackoff(attemptsSoFar int) time.Duration {
 	// Add jitter (±20% random variation)
 	if s.addJitter {
 		jitterFraction := 0.2 // ±20%
-		jitterAmount := time.Duration(float64(backoff) * jitterFraction * (2*rand.Float64() - 1))
-		backoff = backoff + jitterAmount
+		if r, err := secureRandUnitFloat64(); err == nil {
+			jitterAmount := time.Duration(float64(backoff) * jitterFraction * (2*r - 1))
+			backoff = backoff + jitterAmount
+		}
 		if backoff < 0 {
 			backoff = 0
 		}
 	}
 
 	return backoff
+}
+
+// secureRandUnitFloat64 returns a cryptographically secure random float64 in [0,1).
+func secureRandUnitFloat64() (float64, error) {
+    var b [8]byte
+    if _, err := crand.Read(b[:]); err != nil {
+        return 0, err
+    }
+    u := binary.LittleEndian.Uint64(b[:])
+    // Scale to [0,1). Using MaxUint64 as divisor yields [0,1]; subtract epsilon to keep < 1.
+    const denom = float64(^uint64(0)) // math.MaxUint64
+    f := float64(u) / denom
+    if f == 1.0 {
+        f = math.Nextafter(1.0, 0.0)
+    }
+    return f, nil
 }
 
 // DefaultRetryableErrors returns true for errors that should be retried:
