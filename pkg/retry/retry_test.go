@@ -245,12 +245,12 @@ func TestRetry_WithRetryAfterHeader(t *testing.T) {
 	err := strategy.Do(context.Background(), func() error {
 		attempts++
 		if attempts == 1 {
-			// First attempt with Retry-After header of 50ms (should override calculated 10ms backoff)
+			// First attempt with Retry-After header of 1s (should override calculated 10ms backoff)
 			return &api.Error{
 				Code:      http.StatusTooManyRequests,
 				ErrorCode: api.ErrorCodeRateLimitExceeded,
 				Message:   "Rate limit exceeded",
-				Details:   map[string]interface{}{"retry_after": "50"},
+				Details:   map[string]interface{}{"retry_after": "1"},
 			}
 		}
 		return nil
@@ -265,9 +265,9 @@ func TestRetry_WithRetryAfterHeader(t *testing.T) {
 		t.Errorf("Expected 2 attempts, got %d", attempts)
 	}
 
-	// Should wait approximately 50ms for Retry-After header (not the calculated 10ms)
-	if elapsed < 40*time.Millisecond {
-		t.Logf("Warning: Retry-After header not respected. Elapsed: %v, expected ~50ms", elapsed)
+	// Should wait approximately 1s for Retry-After header (not the calculated 10ms)
+	if elapsed < 900*time.Millisecond {
+		t.Logf("Warning: Retry-After header not fully respected. Elapsed: %v, expected ~1s", elapsed)
 	}
 }
 

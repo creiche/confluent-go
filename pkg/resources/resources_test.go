@@ -34,12 +34,14 @@ func TestClusterManager_ListClusters(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": []map[string]interface{}{
 				{"id": "lkc-1", "name": "cluster-1"},
 				{"id": "lkc-2", "name": "cluster-2"},
 			},
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -59,10 +61,12 @@ func TestClusterManager_ListClusters(t *testing.T) {
 func TestClusterManager_GetCluster(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":   "lkc-123",
 			"name": "my-cluster",
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -102,12 +106,14 @@ func TestClusterManager_DeleteCluster(t *testing.T) {
 func TestTopicManager_ListTopics(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": []map[string]interface{}{
 				{"name": "topic-1"},
 				{"name": "topic-2"},
 			},
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -127,10 +133,12 @@ func TestTopicManager_ListTopics(t *testing.T) {
 func TestTopicManager_GetTopic(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"name":             "my-topic",
 			"partitions_count": 3,
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -170,12 +178,14 @@ func TestTopicManager_DeleteTopic(t *testing.T) {
 func TestServiceAccountManager_ListServiceAccounts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": []map[string]interface{}{
 				{"id": "sa-1", "display_name": "service-account-1"},
 				{"id": "sa-2", "display_name": "service-account-2"},
 			},
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -200,10 +210,12 @@ func TestServiceAccountManager_CreateServiceAccount(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":           "sa-new",
 			"display_name": "new-sa",
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -240,11 +252,13 @@ func TestServiceAccountManager_DeleteServiceAccount(t *testing.T) {
 func TestACLManager_ListACLs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": []map[string]interface{}{
 				{"principal": "User:sa-1", "operation": "Read"},
 			},
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -308,12 +322,14 @@ func TestACLManager_DeleteACL(t *testing.T) {
 func TestEnvironmentManager_ListEnvironments(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": []map[string]interface{}{
 				{"id": "env-1", "name": "environment-1"},
 				{"id": "env-2", "name": "environment-2"},
 			},
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -333,10 +349,12 @@ func TestEnvironmentManager_ListEnvironments(t *testing.T) {
 func TestEnvironmentManager_GetEnvironment(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":   "env-123",
 			"name": "my-environment",
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -357,10 +375,12 @@ func TestEnvironmentManager_CreateEnvironment(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":   "env-new",
 			"name": "new-environment",
-		})
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 

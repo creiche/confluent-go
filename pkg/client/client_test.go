@@ -44,7 +44,9 @@ func TestClientDo_SuccessfulRequest(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"result": "success"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"result": "success"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -92,7 +94,9 @@ func TestClientDo_POSTWithBody(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{"id": "cluster-123"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"id": "cluster-123"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -128,7 +132,9 @@ func TestClientDo_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error": "not found"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -194,7 +200,9 @@ func TestClientDo_UnauthorizedRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -301,7 +309,9 @@ func BenchmarkClientDo(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"result": "ok"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"result": "ok"}); err != nil {
+			b.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -323,7 +333,7 @@ func BenchmarkClientDo(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		c.Do(context.Background(), req)
+		_, _ = c.Do(context.Background(), req)
 	}
 }
 
@@ -332,7 +342,9 @@ func TestClientDo_Error_IsNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error_code": "NOT_FOUND", "message": "Resource not found"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error_code": "NOT_FOUND", "message": "Resource not found"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -379,7 +391,9 @@ func TestClientDo_Error_IsUnauthorized(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error_code": "UNAUTHORIZED", "message": "Invalid credentials"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error_code": "UNAUTHORIZED", "message": "Invalid credentials"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -419,7 +433,9 @@ func TestClientDo_Error_IsRateLimited(t *testing.T) {
 		w.Header().Set("Retry-After", "60")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusTooManyRequests)
-		json.NewEncoder(w).Encode(map[string]string{"error_code": "RATE_LIMIT_EXCEEDED", "message": "Too many requests"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error_code": "RATE_LIMIT_EXCEEDED", "message": "Too many requests"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -467,7 +483,9 @@ func TestClientDo_Error_IsBadRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error_code": "INVALID_REQUEST", "message": "Invalid request payload"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error_code": "INVALID_REQUEST", "message": "Invalid request payload"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -507,7 +525,9 @@ func TestClientDo_Error_IsServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error_code": "INTERNAL_SERVER_ERROR", "message": "Internal server error"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error_code": "INTERNAL_SERVER_ERROR", "message": "Internal server error"}); err != nil {
+			t.Errorf("failed to write JSON response: %v", err)
+		}
 	}))
 	defer server.Close()
 
