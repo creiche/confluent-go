@@ -56,11 +56,7 @@ jobs:
         fi
         
         # Set output for GitHub release (multi-line safe)
-        {
-          echo "changelog<<EOF"
-          cat CHANGELOG.md
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
+        printf "changelog<<EOF\n%s\nEOF\n" "$(cat CHANGELOG.md)" >> "$GITHUB_OUTPUT"
     
     - name: Create GitHub Release
       uses: actions/create-release@v1
