@@ -331,3 +331,258 @@ The `*api.Error` type implements Go's error interface and works with:
 - [pkg/api/errors.go](pkg/api/errors.go) - Error type definitions
 - [pkg/client/client_test.go](pkg/client/client_test.go) - Error handling tests
 - [REST_ARCHITECTURE.md](REST_ARCHITECTURE.md) - API architecture guide
+
+## Schema Registry Error Handling
+
+Schema Registry APIs use specific error codes to indicate different failure conditions. The `schemaregistry` package provides helper functions that work directly with `*api.Error` to check for specific SR error codes.
+
+### Schema Registry Error Codes
+
+| Code | Constant | Description |
+|------|----------|-------------|
+| 40401 | `ErrorCodeSubjectNotFound` | Subject does not exist |
+| 40402 | `ErrorCodeVersionNotFound` | Schema version not found |
+| 40403 | `ErrorCodeSchemaNotFound` | Schema ID not found |
+| 40404 | `ErrorCodeSubjectSoftDeleted` | Subject was soft-deleted |
+| 42201 | `ErrorCodeInvalidSchema` | Schema syntax is invalid |
+| 42202 | `ErrorCodeInvalidSubject` | Subject name is invalid |
+| 42203 | `ErrorCodeInvalidCompatibility` | Compatibility level is invalid |
+| 42204 | `ErrorCodeInvalidMode` | Mode value is invalid |
+| 409 | `ErrorCodeIncompatibleSchema` | Schema is incompatible with existing version |
+
+### Helper Functions
+
+The `schemaregistry` package provides helper functions to check specific error types:
+
+```go
+import "github.com/creiche/confluent-go/pkg/schemaregistry"
+
+// Check for subject not found (40401)
+if schemaregistry.IsSubjectNotFound(err) {
+    log.Printf("Subject does not exist: %v", err)
+}
+
+// Check for version not found (40402)
+if schemaregistry.IsVersionNotFound(err) {
+    log.Printf("Schema version not found: %v", err)
+}
+
+// Check for schema ID not found (40403)
+if schemaregistry.IsSchemaNotFound(err) {
+    log.Printf("Schema ID not found: %v", err)
+}
+
+// Check for soft-deleted subject (40404)
+if schemaregistry.IsSubjectSoftDeleted(err) {
+    log.Printf("Subject was soft-deleted, use permanent=true: %v", err)
+}
+
+// Check for invalid schema syntax (42201)
+if schemaregistry.IsInvalidSchema(err) {
+    log.Printf("Schema syntax is invalid: %v", err)
+}
+
+// Check for invalid subject name (42202)
+if schemaregistry.IsInvalidSubject(err) {
+    log.Printf("Subject name is invalid: %v", err)
+}
+
+// Check for incompatible schema (409)
+if schemaregistry.IsIncompatibleSchema(err) {
+    log.Printf("Schema is incompatible with existing version: %v", err)
+}
+
+// Check for invalid compatibility level (42203)
+if schemaregistry.IsInvalidCompatibility(err) {
+    log.Printf("Invalid compatibility level: %v", err)
+}
+
+// Check for invalid mode (42204)
+if schemaregistry.IsInvalidMode(err) {
+    log.Printf("Invalid mode: %v", err)
+}
+```
+
+### Schema Registry Error Handling Examples
+
+#### Handling Missing Subjects
+
+```go
+schema, err := srMgr.GetLatestSchema(ctx, "my-subject")
+if err != nil {
+    if schemaregistry.IsSubjectNotFound(err) {
+        log.Printf("Subject 'my-subject' does not exist, creating...")
+        // Register initial schema
+        id, err := srMgr.RegisterSchema(ctx, "my-subject", schemaregistry.RegisterRequest{
+            Schema:     mySchemaJSON,
+            SchemaType: schemaregistry.SchemaTypeAvro,
+        })
+        // Handle registration...
+    } else {
+        return fmt.Errorf("failed to get schema: %w", err)
+    }
+}
+```
+
+#### Handling Schema Validation Errors
+
+```go
+id, err := srMgr.RegisterSchema(ctx, subject, schemaregistry.RegisterRequest{
+    Schema:     schemaJSON,
+    SchemaType: schemaregistry.SchemaTypeAvro,
+})
+if err != nil {
+    if schemaregistry.IsInvalidSchema(err) {
+        log.Printf("Schema validation failed: %v", err)
+        // Log the schema for debugging
+        log.Printf("Invalid schema: %s", schemaJSON)
+        return fmt.Errorf("schema syntax error: %w", err)
+    } else if schemaregistry.IsIncompatibleSchema(err) {
+        log.Printf("Schema is incompatible with existing version: %v", err)
+        // Could test compatibility first in the future
+        return fmt.Errorf("schema compatibility error: %w", err)
+    }
+    return err
+}
+```
+
+#### Handling Soft-Deleted Subjects
+
+```go
+err := srMgr.DeleteSubject(ctx, "old-subject", false)
+if err != nil {
+    log.Printf("Soft delete failed: %v", err)
+    return err
+}
+
+// Later, trying to access...
+schema, err := srMgr.GetLatestSchema(ctx, "old-subject")
+if err != nil {
+    if schemaregistry.IsSubjectSoftDeleted(err) {
+        log.Printf("Subject was soft-deleted, performing hard delete...")
+        // Hard delete to fully remove
+        err = srMgr.DeleteSubject(ctx, "old-subject", true)
+        if err != nil {
+            return fmt.Errorf("hard delete failed: %w", err)
+        }
+    }
+}
+```
+
+#### Testing Schema Compatibility Before Registration
+
+```go
+compatible, err := srMgr.TestCompatibility(ctx, subject, schemaregistry.RegisterRequest{
+    Schema:     newSchemaJSON,
+    SchemaType: schemaregistry.SchemaTypeAvro,
+})
+if err != nil {
+    if schemaregistry.IsSubjectNotFound(err) {
+        // No existing schema, safe to register
+        log.Printf("No existing schema, registering initial version...")
+    } else {
+        return fmt.Errorf("compatibility check failed: %w", err)
+    }
+}
+
+if !compatible {
+    return fmt.Errorf("schema would be incompatible with current version")
+}
+
+// Safe to register
+id, err := srMgr.RegisterSchema(ctx, subject, schemaregistry.RegisterRequest{
+    Schema:     newSchemaJSON,
+    SchemaType: schemaregistry.SchemaTypeAvro,
+})
+```
+
+#### Validating Compatibility Levels
+
+```go
+err := srMgr.SetGlobalCompatibility(ctx, "CUSTOM_LEVEL")
+if err != nil {
+    if schemaregistry.IsInvalidCompatibility(err) {
+        log.Printf("Invalid compatibility level, using BACKWARD instead")
+        err = srMgr.SetGlobalCompatibility(ctx, schemaregistry.CompatBackward)
+        if err != nil {
+            return fmt.Errorf("failed to set compatibility: %w", err)
+        }
+    } else {
+        return err
+    }
+}
+```
+
+### Working with Schema Registry Errors
+
+All Schema Registry manager methods return `*api.Error` directly. The error helpers work by extracting the `error_code` field from the error's `Details` map:
+
+```go
+schema, err := srMgr.GetLatestSchema(ctx, "my-subject")
+if err != nil {
+    // Use helper functions directly on api.Error
+    if schemaregistry.IsSubjectNotFound(err) {
+        log.Printf("Subject not found")
+    }
+    
+    // Or access the underlying api.Error
+    var apiErr *api.Error
+    if errors.As(err, &apiErr) {
+        log.Printf("HTTP Status: %d", apiErr.Code)
+        log.Printf("Message: %s", apiErr.Message)
+        
+        // Can also use api.Error helpers
+        if apiErr.IsNotFound() {
+            // Handle 404 generically
+        }
+    }
+    
+    // Or get the SR error code directly
+    if code, ok := schemaregistry.GetSRCode(err); ok {
+        log.Printf("SR Error Code: %d", code)
+    }
+}
+```
+
+### Best Practices for Schema Registry
+
+1. **Always check for subject existence before operations**:
+   ```go
+   if schemaregistry.IsSubjectNotFound(err) {
+       // Handle missing subject
+   }
+   ```
+
+2. **Test compatibility before registration**:
+   ```go
+   compatible, err := srMgr.TestCompatibility(ctx, subject, req)
+   if !compatible {
+       // Handle incompatibility
+   }
+   ```
+
+3. **Validate schemas before registration**:
+   ```go
+   if schemaregistry.IsInvalidSchema(err) {
+       // Log schema for debugging
+   }
+   ```
+
+4. **Handle soft vs hard deletes explicitly**:
+   ```go
+   if schemaregistry.IsSubjectSoftDeleted(err) {
+       // Use permanent=true for hard delete
+       srMgr.DeleteSubject(ctx, subject, true)
+   }
+   ```
+
+5. **Use typed constants for compatibility levels and schema types**:
+   ```go
+   // Good
+   schemaregistry.CompatBackward
+   schemaregistry.SchemaTypeAvro
+   
+   // Avoid
+   "BACKWARD"
+   "AVRO"
+   ```
