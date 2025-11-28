@@ -310,8 +310,7 @@ func TestProtobufValidator_EdgeCases(t *testing.T) {
 	// Keyword after underscore delimiter will match (e.g., "my_message" contains "message")
 	err := v.Validate(`my_message_count = 5`)
 	if err != nil {
-		// This passes because underscore is a delimiter and "message" is found
-		t.Logf("text with underscored identifier passed (delimiter splits correctly): %v", err)
+		t.Errorf("expected text with underscored identifier to pass (delimiter splits 'message' correctly), got error: %v", err)
 	}
 
 	// Text without any keywords should fail
