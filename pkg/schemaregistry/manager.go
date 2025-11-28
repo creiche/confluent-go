@@ -94,9 +94,15 @@ func (m *Manager) GetSchemaByID(ctx context.Context, id int) (*Schema, error) {
 
 // RegisterSchema registers a new schema under a subject and returns the assigned ID.
 // The schema is validated before registration to catch syntax errors early.
+// If SchemaType is empty, it defaults to AVRO (matching Schema Registry API behavior).
 func (m *Manager) RegisterSchema(ctx context.Context, subject string, payload RegisterRequest) (int, error) {
+	// Default schema type to AVRO if omitted, matching Schema Registry API
+	schemaType := payload.SchemaType
+	if schemaType == "" {
+		schemaType = SchemaTypeAvro
+	}
 	// Validate schema syntax before sending to SR
-	if err := ValidateSchema(payload.Schema, payload.SchemaType); err != nil {
+	if err := ValidateSchema(payload.Schema, schemaType); err != nil {
 		return 0, fmt.Errorf("schema validation failed: %w", err)
 	}
 
@@ -114,9 +120,15 @@ func (m *Manager) RegisterSchema(ctx context.Context, subject string, payload Re
 
 // TestCompatibility checks compatibility of the provided schema against the latest.
 // The schema is validated before the compatibility check.
+// If SchemaType is empty, it defaults to AVRO (matching Schema Registry API behavior).
 func (m *Manager) TestCompatibility(ctx context.Context, subject string, payload RegisterRequest) (bool, error) {
+	// Default schema type to AVRO if omitted, matching Schema Registry API
+	schemaType := payload.SchemaType
+	if schemaType == "" {
+		schemaType = SchemaTypeAvro
+	}
 	// Validate schema syntax before testing compatibility
-	if err := ValidateSchema(payload.Schema, payload.SchemaType); err != nil {
+	if err := ValidateSchema(payload.Schema, schemaType); err != nil {
 		return false, fmt.Errorf("schema validation failed: %w", err)
 	}
 

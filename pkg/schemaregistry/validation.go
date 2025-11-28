@@ -179,12 +179,19 @@ func (v *ProtobufValidator) Validate(schema string) error {
 	return nil
 }
 
-// containsWord checks if a word appears in the text (simple string contains)
+// containsWord checks if a word appears in the text as a separate token.
+// Uses simple field splitting which works well for Protobuf schema keywords.
 func containsWord(text, word string) bool {
-	// Simple substring check - could be enhanced with regex for word boundaries
-	return len(text) > 0 && len(word) > 0 &&
-		((len(text) >= len(word) && text[:len(word)] == word) ||
-			strings.Contains(text, " "+word) ||
-			strings.Contains(text, "\n"+word) ||
-			strings.Contains(text, "\t"+word))
+	if text == "" || word == "" {
+		return false
+	}
+	// Split on common delimiters (space, newline, tab, semicolon, brace, paren)
+	for _, field := range strings.FieldsFunc(text, func(r rune) bool {
+		return r == ' ' || r == '\n' || r == '\t' || r == ';' || r == '{' || r == '}' || r == '(' || r == ')'
+	}) {
+		if field == word {
+			return true
+		}
+	}
+	return false
 }

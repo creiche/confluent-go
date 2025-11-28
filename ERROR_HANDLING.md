@@ -559,7 +559,6 @@ if err != nil {
    if !compatible {
        // Handle incompatibility
    }
-   }
    ```
 
 3. **Validate schemas before registration**:
