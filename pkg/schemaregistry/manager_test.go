@@ -475,3 +475,87 @@ func TestTestCompatibility_ClientSideValidation(t *testing.T) {
 		t.Errorf("expected 'validation failed' in error, got: %v", err)
 	}
 }
+
+func TestGetGlobalMode(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		if !strings.Contains(r.URL.Path, "/mode") {
+			t.Errorf("expected path to contain /mode, got %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"mode":"READWRITE"}`))
+	}
+	c := newTestClient(t, handler)
+	m := NewManager(c, "/schema-registry/v1")
+
+	mode, err := m.GetGlobalMode(context.Background())
+	if err != nil {
+		t.Fatalf("GetGlobalMode failed: %v", err)
+	}
+	if mode != ModeReadWrite {
+		t.Errorf("expected mode READWRITE, got %s", mode)
+	}
+}
+
+func TestSetGlobalMode(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		if !strings.Contains(r.URL.Path, "/mode") {
+			t.Errorf("expected path to contain /mode, got %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+	c := newTestClient(t, handler)
+	m := NewManager(c, "/schema-registry/v1")
+
+	err := m.SetGlobalMode(context.Background(), ModeReadOnly)
+	if err != nil {
+		t.Fatalf("SetGlobalMode failed: %v", err)
+	}
+}
+
+func TestGetSubjectMode(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		if !strings.Contains(r.URL.Path, "/mode/test-subject") {
+			t.Errorf("expected path to contain /mode/test-subject, got %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"mode":"READONLY"}`))
+	}
+	c := newTestClient(t, handler)
+	m := NewManager(c, "/schema-registry/v1")
+
+	mode, err := m.GetSubjectMode(context.Background(), "test-subject")
+	if err != nil {
+		t.Fatalf("GetSubjectMode failed: %v", err)
+	}
+	if mode != ModeReadOnly {
+		t.Errorf("expected mode READONLY, got %s", mode)
+	}
+}
+
+func TestSetSubjectMode(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		if !strings.Contains(r.URL.Path, "/mode/test-subject") {
+			t.Errorf("expected path to contain /mode/test-subject, got %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+	c := newTestClient(t, handler)
+	m := NewManager(c, "/schema-registry/v1")
+
+	err := m.SetSubjectMode(context.Background(), "test-subject", ModeImport)
+	if err != nil {
+		t.Fatalf("SetSubjectMode failed: %v", err)
+	}
+}

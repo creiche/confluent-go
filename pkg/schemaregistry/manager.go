@@ -4,7 +4,8 @@
 //   - Subject management (list, get, delete)
 //   - Schema registration and retrieval
 //   - Schema versioning
-//   - Compatibility testing and configuration
+//   - Compatibility testing and configuration (global and per-subject)
+//   - Mode configuration (global and per-subject): READWRITE, READONLY, IMPORT
 //   - Client-side schema validation for AVRO, JSON Schema, and Protobuf
 //
 // Schemas are automatically validated before registration to catch syntax errors early.
@@ -230,6 +231,58 @@ func (m *Manager) GetSubjectCompatibility(ctx context.Context, subject string) (
 func (m *Manager) SetSubjectCompatibility(ctx context.Context, subject string, level string) error {
 	body := map[string]string{"compatibility": level}
 	req := client.Request{Method: "PUT", Path: fmt.Sprintf("%s/config/%s", m.basePath, url.PathEscape(subject)), Body: body}
+	_, err := m.c.Do(ctx, req)
+	return err
+}
+
+// Mode operations: READWRITE (default), READONLY (prevents registration), IMPORT (for replication)
+
+// GetGlobalMode returns the global mode.
+func (m *Manager) GetGlobalMode(ctx context.Context) (string, error) {
+	var out struct {
+		Mode string `json:"mode"`
+	}
+	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/mode", m.basePath)}
+	resp, err := m.c.Do(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	if err := resp.DecodeJSON(&out); err != nil {
+		return "", err
+	}
+	return out.Mode, nil
+}
+
+// SetGlobalMode sets the global mode.
+// Valid modes: ModeReadWrite, ModeReadOnly, ModeImport.
+func (m *Manager) SetGlobalMode(ctx context.Context, mode string) error {
+	body := map[string]string{"mode": mode}
+	req := client.Request{Method: "PUT", Path: fmt.Sprintf("%s/mode", m.basePath), Body: body}
+	_, err := m.c.Do(ctx, req)
+	return err
+}
+
+// GetSubjectMode returns mode for a subject.
+func (m *Manager) GetSubjectMode(ctx context.Context, subject string) (string, error) {
+	var out struct {
+		Mode string `json:"mode"`
+	}
+	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/mode/%s", m.basePath, url.PathEscape(subject))}
+	resp, err := m.c.Do(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	if err := resp.DecodeJSON(&out); err != nil {
+		return "", err
+	}
+	return out.Mode, nil
+}
+
+// SetSubjectMode sets mode for a subject.
+// Valid modes: ModeReadWrite, ModeReadOnly, ModeImport.
+func (m *Manager) SetSubjectMode(ctx context.Context, subject string, mode string) error {
+	body := map[string]string{"mode": mode}
+	req := client.Request{Method: "PUT", Path: fmt.Sprintf("%s/mode/%s", m.basePath, url.PathEscape(subject)), Body: body}
 	_, err := m.c.Do(ctx, req)
 	return err
 }

@@ -69,6 +69,10 @@ The Confluent CLI served as a reference for understanding:
 - `PUT /config` - Set global compatibility level
 - `GET /config/{subject}` - Get subject compatibility level
 - `PUT /config/{subject}` - Set subject compatibility level
+- `GET /mode` - Get global mode
+- `PUT /mode` - Set global mode
+- `GET /mode/{subject}` - Get subject mode
+- `PUT /mode/{subject}` - Set subject mode
 
 **Configuration:**
 - Base path: default `"/schema-registry/v1"`
@@ -76,6 +80,7 @@ The Confluent CLI served as a reference for understanding:
 - On-prem BaseURL: SR URL (e.g., `https://sr.example.com`)
 - Types: prefer constants `SchemaTypeAvro|JSON|Protobuf`
 - Compatibility: prefer constants `CompatNone|Backward|BackwardTransitive|Forward|ForwardTransitive|Full|FullTransitive`
+- Mode: prefer constants `ModeReadWrite|ReadOnly|Import`
 
 ## Authentication
 

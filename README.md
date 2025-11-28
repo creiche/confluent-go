@@ -18,7 +18,7 @@ Key packages:
 - `pkg/client`: low-level HTTP client (`Do`, `Response.DecodeJSON`) with Basic Auth.
 - `pkg/resources`: resource managers for Clusters (CMK v2), Topics/ACLs (Kafka REST v3), Service Accounts & API Keys (IAM v2), Environments (Org v2).
 - `pkg/retry`: configurable retry strategy with exponential backoff and jitter.
-- `pkg/schemaregistry`: Schema Registry (preview) with core operations.
+- `pkg/schemaregistry`: Schema Registry with complete operations, validation, and mode configuration.
 
 Related docs: see `ERROR_HANDLING.md`, `REST_ARCHITECTURE.md`, and `PROJECT_STRUCTURE.md` for deeper reference.
 
@@ -37,9 +37,9 @@ c, err := client.NewClient(cfg)
 clusters, err := resources.NewClusterManager(c).ListClusters(ctx, envID)
 ```
 
-## Schema Registry (Preview)
+## Schema Registry
 
-Schema Registry support lives in `pkg/schemaregistry` and reuses the shared REST client. Core operations include subjects, schemas, versions, deletion, and compatibility. **Schemas are automatically validated client-side before registration.**
+Schema Registry support lives in `pkg/schemaregistry` and reuses the shared REST client. Core operations include subjects, schemas, versions, deletion, compatibility, and mode configuration. **Schemas are automatically validated client-side before registration.**
 
 ```go
 sr := schemaregistry.NewManager(c, "/schema-registry/v1")
@@ -68,6 +68,12 @@ glob, err := sr.GetGlobalCompatibility(ctx)
 err = sr.SetGlobalCompatibility(ctx, schemaregistry.CompatFull)
 subj, err := sr.GetSubjectCompatibility(ctx, "my-subject")
 err = sr.SetSubjectCompatibility(ctx, "my-subject", schemaregistry.CompatBackward)
+
+// Mode (global and per-subject): READWRITE, READONLY, IMPORT
+mode, err := sr.GetGlobalMode(ctx)
+err = sr.SetGlobalMode(ctx, schemaregistry.ModeReadOnly) // prevent schema changes
+subjMode, err := sr.GetSubjectMode(ctx, "my-subject")
+err = sr.SetSubjectMode(ctx, "my-subject", schemaregistry.ModeReadWrite)
 ```
 
 ### Schema Validation
@@ -110,7 +116,7 @@ _, err := sr.RegisterSchema(ctx, "bad-schema", schemaregistry.RegisterRequest{
 - Base path: If omitted, `NewManager` defaults to `"/schema-registry/v1"`.
 - Cloud URL: Use your Confluent Cloud base URL (e.g., `https://api.confluent.cloud`).
 - On-prem URL: Point `client.Config.BaseURL` to your SR endpoint (e.g., `https://sr.example.com`).
-- Constants: Prefer `schemaregistry.SchemaTypeAvro|JSON|Protobuf` and `schemaregistry.Compat*` constants over raw strings.
+- Constants: Prefer `schemaregistry.SchemaTypeAvro|JSON|Protobuf`, `schemaregistry.Compat*`, and `schemaregistry.Mode*` constants over raw strings.
 
 ### Error Handling
 
@@ -174,7 +180,7 @@ Go version: 1.22+
 - Kafka REST (v3) — topics, ACLs
 - IAM (v2) — service accounts, API keys
 - Org (v2) — environments
-- Schema Registry (v1, preview) — subjects/schemas/compatibility
+- Schema Registry (v1) — subjects/schemas/compatibility/modes
 
 ## Contributing
 

@@ -60,3 +60,10 @@ const (
 	SchemaTypeJSON     = "JSON"
 	SchemaTypeProtobuf = "PROTOBUF"
 )
+
+// Mode values for Schema Registry configuration.
+const (
+	ModeReadWrite = "READWRITE" // Default: allows reading and writing schemas
+	ModeReadOnly  = "READONLY"  // Read-only: prevents schema registration
+	ModeImport    = "IMPORT"    // Import mode: for schema replication
+)
