@@ -30,7 +30,7 @@ func ValidateSchema(schema string, schemaType string) error {
 	case SchemaTypeProtobuf:
 		validator = &ProtobufValidator{}
 	default:
-		return fmt.Errorf("unsupported schema type: %s", schemaType)
+		return fmt.Errorf("unsupported schema type: %q", schemaType)
 	}
 
 	return validator.Validate(schema)

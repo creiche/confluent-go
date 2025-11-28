@@ -416,7 +416,7 @@ func TestSRError_SubjectSoftDeleted(t *testing.T) {
 func TestSRError_InvalidMode(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write([]byte(`{"error_code": 42204, "message": "Invalid mode"}`))
+		_, _ = w.Write([]byte(`{"error_code": 42204, "message": "Invalid mode"}`))
 	}
 	c := newTestClient(t, handler)
 	m := NewManager(c, "/schema-registry/v1")
