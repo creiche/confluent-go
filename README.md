@@ -146,6 +146,85 @@ if err != nil {
 
 Available error helpers: `IsSubjectNotFound`, `IsVersionNotFound`, `IsSchemaNotFound`, `IsSubjectSoftDeleted`, `IsInvalidSchema`, `IsIncompatibleSchema`, `IsInvalidCompatibility`, `IsInvalidSubject`, `IsInvalidMode`. See `ERROR_HANDLING.md` for complete examples.
 
+## Kafka Connect
+
+Kafka Connect support lives in `pkg/resources` and provides comprehensive connector lifecycle management. Supports creating, updating, pausing, resuming, restarting connectors and individual tasks.
+
+```go
+connMgr := resources.NewConnectorManager(c)
+
+// List connectors
+connectors, err := connMgr.ListConnectors(ctx, envID, connectClusterID)
+
+// Get connector details
+connector, err := connMgr.GetConnector(ctx, envID, connectClusterID, "my-connector")
+
+// Create a connector
+config := map[string]string{
+  "connector.class":          "io.confluent.connect.jdbc.JdbcSourceConnector",
+  "tasks.max":                "1",
+  "connection.url":           "jdbc:postgresql://localhost:5432/mydb",
+  "connection.user":          "postgres",
+  "mode":                     "incrementing",
+  "incrementing.column.name": "id",
+  "topic.prefix":             "jdbc-",
+}
+connector, err := connMgr.CreateConnector(ctx, envID, connectClusterID, "jdbc-source", config)
+
+// Get connector status
+status, err := connMgr.GetConnectorStatus(ctx, envID, connectClusterID, "jdbc-source")
+fmt.Printf("State: %s\n", status.State)
+for _, task := range status.Tasks {
+  fmt.Printf("Task %d: %s\n", task.ID, task.State)
+}
+
+// Lifecycle operations
+err = connMgr.PauseConnector(ctx, envID, connectClusterID, "jdbc-source")
+err = connMgr.ResumeConnector(ctx, envID, connectClusterID, "jdbc-source")
+err = connMgr.RestartConnector(ctx, envID, connectClusterID, "jdbc-source")
+err = connMgr.RestartTask(ctx, envID, connectClusterID, "jdbc-source", 0)
+
+// Update connector configuration
+newConfig := map[string]string{
+  "tasks.max": "2",
+  // ... other config
+}
+connector, err = connMgr.UpdateConnector(ctx, envID, connectClusterID, "jdbc-source", newConfig)
+
+// List available connector plugins
+plugins, err := connMgr.ListConnectorPlugins(ctx, envID, connectClusterID)
+for _, plugin := range plugins {
+  fmt.Printf("%s (%s) v%s\n", plugin.Class, plugin.Type, plugin.Version)
+}
+
+// Validate connector configuration before creation
+validation, err := connMgr.ValidateConnectorConfig(ctx, envID, connectClusterID,
+  "io.confluent.connect.s3.S3SinkConnector",
+  map[string]string{
+    "topics":         "my-topic",
+    "s3.bucket.name": "my-bucket",
+    // ... other config
+  })
+if validation.ErrorCount > 0 {
+  // Handle validation errors
+}
+
+// Delete connector
+err = connMgr.DeleteConnector(ctx, envID, connectClusterID, "jdbc-source")
+```
+
+### Connector Operations
+
+The ConnectorManager provides these operations:
+
+- **CRUD**: `CreateConnector`, `GetConnector`, `UpdateConnector`, `DeleteConnector`
+- **List**: `ListConnectors`, `ListConnectorPlugins`
+- **Status**: `GetConnectorStatus`, `GetTaskStatus`, `GetConnectorTasks`
+- **Lifecycle**: `PauseConnector`, `ResumeConnector`, `RestartConnector`, `RestartTask`
+- **Configuration**: `GetConnectorConfig`, `ValidateConnectorConfig`
+
+All operations return standard `*api.Error` types for consistent error handling.
+
 ## Examples
 
 - `cmd/examples/main.go` — REST client usage across managers
@@ -181,6 +260,7 @@ Go version: 1.22+
 - IAM (v2) — service accounts, API keys
 - Org (v2) — environments
 - Schema Registry (v1) — subjects/schemas/compatibility/modes
+- Kafka Connect (v1) — connectors, plugins, tasks, lifecycle management
 
 ## Contributing
 

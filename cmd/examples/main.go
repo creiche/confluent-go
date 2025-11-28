@@ -171,6 +171,147 @@ func exampleManageACLs(c *client.Client, clusterID string) error {
 	return nil
 }
 
+// Example 5: Manage Connectors
+func exampleManageConnectors(c *client.Client, environmentID string, connectClusterID string) error {
+	ctx := context.Background()
+
+	connectorMgr := resources.NewConnectorManager(c)
+
+	// List connectors
+	fmt.Printf("=== Connectors in Connect Cluster %s ===\n", connectClusterID)
+	connectors, err := connectorMgr.ListConnectors(ctx, environmentID, connectClusterID)
+	if err != nil {
+		fmt.Printf("Note: Failed to list connectors: %v\n", err)
+		return nil
+	}
+	fmt.Printf("Found %d connectors\n", len(connectors))
+	for i, connector := range connectors {
+		fmt.Printf("  %d. %s\n", i+1, connector)
+	}
+
+	// List available connector plugins
+	fmt.Println("\n=== Available Connector Plugins ===")
+	plugins, err := connectorMgr.ListConnectorPlugins(ctx, environmentID, connectClusterID)
+	if err == nil {
+		for _, plugin := range plugins {
+			fmt.Printf("  - %s (%s) v%s\n", plugin.Class, plugin.Type, plugin.Version)
+		}
+	}
+
+	// Create a new connector
+	fmt.Println("\n=== Creating Connector ===")
+	connectorConfig := map[string]string{
+		"connector.class":             "io.confluent.connect.jdbc.JdbcSourceConnector",
+		"tasks.max":                   "1",
+		"connection.url":              "jdbc:postgresql://localhost:5432/mydb",
+		"connection.user":             "postgres",
+		"connection.password":         "password",
+		"mode":                        "incrementing",
+		"incrementing.column.name":    "id",
+		"topic.prefix":                "jdbc-",
+		"poll.interval.ms":            "1000",
+		"batch.max.rows":              "100",
+		"table.include.list":          "users,orders",
+		"validate.non.null":           "false",
+		"errors.tolerance":            "none",
+		"errors.log.enable":           "true",
+		"errors.log.include.messages": "true",
+	}
+
+	connector, err := connectorMgr.CreateConnector(ctx, environmentID, connectClusterID, "jdbc-source-example", connectorConfig)
+	if err != nil {
+		fmt.Printf("Note: Connector creation might have failed (connector may already exist): %v\n", err)
+	} else {
+		fmt.Printf("Created connector: %s\n", connector.Name)
+	}
+
+	// Get connector details
+	fmt.Println("\n=== Connector Details ===")
+	connector, err = connectorMgr.GetConnector(ctx, environmentID, connectClusterID, "jdbc-source-example")
+	if err == nil && connector != nil {
+		fmt.Printf("Connector: %s\n", connector.Name)
+		fmt.Printf("Type: %s\n", connector.Type)
+		fmt.Printf("Tasks: %d\n", connector.Tasks)
+	}
+
+	// Get connector status
+	fmt.Println("\n=== Connector Status ===")
+	status, err := connectorMgr.GetConnectorStatus(ctx, environmentID, connectClusterID, "jdbc-source-example")
+	if err == nil && status != nil {
+		fmt.Printf("State: %s\n", status.State)
+		fmt.Printf("Tasks:\n")
+		for _, task := range status.Tasks {
+			fmt.Printf("  Task %d: %s (Worker: %s)\n", task.ID, task.State, task.Worker)
+			if task.Error != "" {
+				fmt.Printf("    Error: %s\n", task.Error)
+			}
+		}
+	}
+
+	// Pause connector
+	fmt.Println("\n=== Pausing Connector ===")
+	if err := connectorMgr.PauseConnector(ctx, environmentID, connectClusterID, "jdbc-source-example"); err != nil {
+		fmt.Printf("Note: Failed to pause connector: %v\n", err)
+	} else {
+		fmt.Println("Connector paused")
+	}
+
+	// Resume connector
+	fmt.Println("\n=== Resuming Connector ===")
+	if err := connectorMgr.ResumeConnector(ctx, environmentID, connectClusterID, "jdbc-source-example"); err != nil {
+		fmt.Printf("Note: Failed to resume connector: %v\n", err)
+	} else {
+		fmt.Println("Connector resumed")
+	}
+
+	// Update connector configuration
+	fmt.Println("\n=== Updating Connector Config ===")
+	updatedConfig := map[string]string{
+		"tasks.max":        "2",
+		"poll.interval.ms": "2000",
+	}
+	for k, v := range connectorConfig {
+		if _, exists := updatedConfig[k]; !exists {
+			updatedConfig[k] = v
+		}
+	}
+	_, err = connectorMgr.UpdateConnector(ctx, environmentID, connectClusterID, "jdbc-source-example", updatedConfig)
+	if err != nil {
+		fmt.Printf("Note: Failed to update connector: %v\n", err)
+	} else {
+		fmt.Println("Connector configuration updated")
+	}
+
+	// Validate a connector configuration
+	fmt.Println("\n=== Validating Connector Config ===")
+	validation, err := connectorMgr.ValidateConnectorConfig(ctx, environmentID, connectClusterID,
+		"io.confluent.connect.s3.S3SinkConnector",
+		map[string]string{
+			"topics":            "my-topic",
+			"s3.bucket.name":    "my-bucket",
+			"s3.region":         "us-west-2",
+			"flush.size":        "1000",
+			"storage.class":     "STANDARD",
+			"format.class":      "io.confluent.connect.s3.format.json.JsonFormat",
+			"partitioner.class": "io.confluent.connect.storage.partitioner.DefaultPartitioner",
+		})
+	if err == nil && validation != nil {
+		fmt.Printf("Validation result: %d errors\n", validation.ErrorCount)
+		if validation.ErrorCount > 0 {
+			for _, cfg := range validation.Configs {
+				if len(cfg.Value.Errors) > 0 {
+					fmt.Printf("  Config '%s' errors:\n", cfg.Value.Name)
+					for _, errMsg := range cfg.Value.Errors {
+						fmt.Printf("    - %s\n", errMsg)
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	// Initialize the Confluent REST client
 	cfg := client.Config{
@@ -187,6 +328,7 @@ func main() {
 	// These should be set to your actual environment and cluster IDs
 	environmentID := "env-abc123"
 	clusterID := "lkc-xyz789"
+	connectClusterID := "lcc-xyz789"
 
 	// Run examples
 	examples := []struct {
@@ -204,6 +346,9 @@ func main() {
 		}},
 		{"Manage ACLs", func(c *client.Client) error {
 			return exampleManageACLs(c, clusterID)
+		}},
+		{"Manage Connectors", func(c *client.Client) error {
+			return exampleManageConnectors(c, environmentID, connectClusterID)
 		}},
 	}
 

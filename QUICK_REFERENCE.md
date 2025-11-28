@@ -105,6 +105,36 @@ env, err := mgr.GetEnvironment(ctx, "env-xyz")
 env, err := mgr.CreateEnvironment(ctx, "env-name", "display name")
 ```
 
+### Connectors
+```go
+mgr := resources.NewConnectorManager(c)
+
+// List
+connectors, err := mgr.ListConnectors(ctx, envID, connectClusterID)
+
+// Create
+config := map[string]string{
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+    "tasks.max": "1",
+    "connection.url": "jdbc:postgresql://localhost:5432/mydb",
+    // ... other config
+}
+connector, err := mgr.CreateConnector(ctx, envID, connectClusterID, "my-connector", config)
+
+// Get status
+status, err := mgr.GetConnectorStatus(ctx, envID, connectClusterID, "my-connector")
+
+// Pause/Resume
+err := mgr.PauseConnector(ctx, envID, connectClusterID, "my-connector")
+err := mgr.ResumeConnector(ctx, envID, connectClusterID, "my-connector")
+
+// Restart
+err := mgr.RestartConnector(ctx, envID, connectClusterID, "my-connector")
+
+// Delete
+err := mgr.DeleteConnector(ctx, envID, connectClusterID, "my-connector")
+```
+
 ## Error Handling
 
 ```go
@@ -158,6 +188,7 @@ make lint
 | Service account ops | `pkg/resources/service_account.go` |
 | ACL ops | `pkg/resources/acl.go` |
 | Environment ops | `pkg/resources/environment.go` |
+| Connector ops | `pkg/resources/connector.go` |
 | Examples | `cmd/examples/` |
 | Tests | `test/` |
 
@@ -203,6 +234,8 @@ secret := &corev1.Secret{
 - `api.APIKey` - API key credentials
 - `api.ACLBinding` - Access control list entry
 - `api.Environment` - Confluent environment
+- `api.ConnectorConfig` - Kafka Connect connector configuration
+- `api.ConnectorStatus` - Connector and task status information
 
 ## Common Issues
 

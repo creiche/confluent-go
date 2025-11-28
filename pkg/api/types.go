@@ -168,3 +168,55 @@ type TaskStatus struct {
 type ConnectorError struct {
 	Message string `json:"message"`
 }
+
+// ConnectorPlugin represents a Kafka Connect connector plugin available in the cluster.
+type ConnectorPlugin struct {
+	Class   string `json:"class"`
+	Type    string `json:"type"` // SOURCE or SINK
+	Version string `json:"version"`
+}
+
+// ConnectorValidation represents the validation result for a connector configuration.
+type ConnectorValidation struct {
+	Name       string                      `json:"name"`
+	ErrorCount int32                       `json:"error_count"`
+	Groups     []string                    `json:"groups"`
+	Configs    []ConnectorConfigValidation `json:"configs"`
+}
+
+// ConnectorConfigValidation represents validation information for a single config property.
+type ConnectorConfigValidation struct {
+	Definition ConfigDefinition `json:"definition"`
+	Value      ConfigValue      `json:"value"`
+}
+
+// ConfigDefinition describes a connector configuration property.
+type ConfigDefinition struct {
+	Name          string   `json:"name"`
+	Type          string   `json:"type"`
+	Required      bool     `json:"required"`
+	DefaultValue  string   `json:"default_value"`
+	Importance    string   `json:"importance"` // HIGH, MEDIUM, LOW
+	Documentation string   `json:"documentation"`
+	Group         string   `json:"group"`
+	Width         string   `json:"width"`
+	DisplayName   string   `json:"display_name"`
+	Dependents    []string `json:"dependents"`
+	OrderInGroup  int32    `json:"order"`
+}
+
+// ConfigValue represents a configuration value and its validation status.
+type ConfigValue struct {
+	Name              string   `json:"name"`
+	Value             string   `json:"value"`
+	RecommendedValues []string `json:"recommended_values"`
+	Errors            []string `json:"errors"`
+	Visible           bool     `json:"visible"`
+}
+
+// ConnectorTask represents a task instance for a connector.
+type ConnectorTask struct {
+	ID        int32             `json:"id"`
+	Config    map[string]string `json:"config"`
+	Connector string            `json:"connector"`
+}

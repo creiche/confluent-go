@@ -82,6 +82,28 @@ The Confluent CLI served as a reference for understanding:
 - Compatibility: prefer constants `CompatNone|Backward|BackwardTransitive|Forward|ForwardTransitive|Full|FullTransitive`
 - Mode: prefer constants `ModeReadWrite|ReadOnly|Import`
 
+### Kafka Connect (Connect API v1)
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connectors` - List connectors
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}` - Get connector
+- `POST /connect/v1/environments/{envId}/clusters/{clusterId}/connectors` - Create connector
+- `PUT /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/config` - Update connector
+- `DELETE /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}` - Delete connector
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/status` - Get status
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/config` - Get config
+- `PUT /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/pause` - Pause connector
+- `PUT /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/resume` - Resume connector
+- `POST /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/restart` - Restart connector
+- `POST /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/tasks/{taskId}/restart` - Restart task
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/tasks` - Get tasks
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connectors/{name}/tasks/{taskId}/status` - Get task status
+- `GET /connect/v1/environments/{envId}/clusters/{clusterId}/connector-plugins` - List available plugins
+- `PUT /connect/v1/environments/{envId}/clusters/{clusterId}/connector-plugins/{pluginName}/config/validate` - Validate config
+
+**Configuration:**
+- Environment ID and Connect Cluster ID are required for all operations
+- Connector configs are connector-specific (JDBC, S3, etc.)
+- Use `ValidateConnectorConfig()` to verify configuration before creating
+
 ## Authentication
 
 All API calls use HTTP Basic Authentication with:
