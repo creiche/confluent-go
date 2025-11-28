@@ -108,14 +108,10 @@ func (cm *ConnectorManager) CreateConnector(ctx context.Context, environmentID s
 //   - *api.Error with IsUnauthorized() for authentication failures
 //   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (cm *ConnectorManager) UpdateConnector(ctx context.Context, environmentID string, clusterID string, connectorName string, config map[string]string) (*api.ConnectorConfig, error) {
-	body := map[string]interface{}{
-		"config": config,
-	}
-
 	req := client.Request{
 		Method: "PUT",
 		Path:   fmt.Sprintf("/connect/v1/environments/%s/clusters/%s/connectors/%s/config", environmentID, clusterID, connectorName),
-		Body:   body,
+		Body:   config,
 	}
 
 	resp, err := cm.client.Do(ctx, req)
@@ -308,6 +304,10 @@ func (cm *ConnectorManager) ListConnectorPlugins(ctx context.Context, environmen
 //   - *api.Error with IsUnauthorized() for authentication failures
 //   - *api.Error with IsRateLimited() if rate limit is exceeded
 func (cm *ConnectorManager) ValidateConnectorConfig(ctx context.Context, environmentID string, clusterID string, connectorClass string, config map[string]string) (*api.ConnectorValidation, error) {
+	if _, exists := config["connector.class"]; exists {
+		return nil, fmt.Errorf("connector.class should not be included in config map, use connectorClass parameter instead")
+	}
+
 	body := map[string]interface{}{
 		"connector.class": connectorClass,
 	}
