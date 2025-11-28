@@ -413,6 +413,23 @@ func TestSRError_SubjectSoftDeleted(t *testing.T) {
 	}
 }
 
+func TestSRError_InvalidMode(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte(`{"error_code": 42204, "message": "Invalid mode"}`))
+	}
+	c := newTestClient(t, handler)
+	m := NewManager(c, "/schema-registry/v1")
+
+	err := m.SetGlobalCompatibility(context.Background(), "INVALID_MODE")
+	if err == nil {
+		t.Fatal("expected error for invalid mode")
+	}
+	if !IsInvalidMode(err) {
+		t.Errorf("IsInvalidMode should return true, got error: %v", err)
+	}
+}
+
 // Client-side validation tests
 
 func TestRegisterSchema_ClientSideValidation(t *testing.T) {
