@@ -30,7 +30,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/creiche/confluent-go/pkg/api"
 	"github.com/creiche/confluent-go/pkg/client"
 )
 
@@ -132,11 +131,6 @@ func (m *Manager) TestCompatibility(ctx context.Context, subject string, payload
 	}
 	return out.IsCompatible, nil
 }
-
-// Error helpers passthrough for convenience.
-var (
-	_ = api.Error{}
-)
 
 // ListVersions lists all versions for a subject.
 func (m *Manager) ListVersions(ctx context.Context, subject string) ([]int, error) {
