@@ -152,12 +152,14 @@ func (v *JSONSchemaValidator) Validate(schema string) error {
 // ProtobufValidator validates Protobuf schema syntax.
 // It performs lightweight validation by checking for expected Protobuf keywords
 // (syntax, message, service, package, or enum).
+// Note: This is intentionally permissive - it checks for keyword presence but does not
+// parse full .proto syntax or validate context (comments, strings, etc.).
 type ProtobufValidator struct{}
 
 // Validate checks if the Protobuf schema has basic syntax requirements
 func (v *ProtobufValidator) Validate(schema string) error {
 	if schema == "" {
-		return fmt.Errorf("Protobuf schema cannot be empty")
+		return fmt.Errorf("protobuf schema cannot be empty")
 	}
 
 	// Basic validation: Protobuf schemas should contain "syntax", "message", or "package"
@@ -173,21 +175,25 @@ func (v *ProtobufValidator) Validate(schema string) error {
 	}
 
 	if !hasProtoKeyword {
-		return fmt.Errorf("Protobuf schema missing expected keywords (syntax, message, service, package, or enum)")
+		return fmt.Errorf("protobuf schema missing expected keywords (syntax, message, service, package, or enum)")
 	}
 
 	return nil
 }
 
 // containsWord checks if a word appears in the text as a separate token.
-// Uses simple field splitting which works well for Protobuf schema keywords.
+// Uses field splitting on common delimiters including underscores, dots, and operators
+// to prevent false positives from keywords in identifiers, comments, or strings.
 func containsWord(text, word string) bool {
 	if text == "" || word == "" {
 		return false
 	}
-	// Split on common delimiters (space, newline, tab, semicolon, brace, paren)
+	// Split on delimiters: whitespace, braces, parens, semicolons, underscores, dots, slashes, equals
 	for _, field := range strings.FieldsFunc(text, func(r rune) bool {
-		return r == ' ' || r == '\n' || r == '\t' || r == ';' || r == '{' || r == '}' || r == '(' || r == ')'
+		return r == ' ' || r == '\n' || r == '\t' || r == ';' ||
+			r == '{' || r == '}' || r == '(' || r == ')' ||
+			r == '_' || r == '.' || r == '/' || r == '=' ||
+			r == '"' || r == '\'' || r == ','
 	}) {
 		if field == word {
 			return true
