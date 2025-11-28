@@ -11,7 +11,7 @@ go get github.com/creiche/confluent-go
 ```go
 import "github.com/creiche/confluent-go/pkg/client"
 
-cfg := client.Config{CliPath: "confluent"}
+cfg := client.Config{BaseURL: "https://api.confluent.cloud", APIKey: "<key>", APISecret: "<secret>"}
 c, err := client.NewClient(cfg)
 if err != nil {
     log.Fatal(err)
@@ -206,9 +206,9 @@ secret := &corev1.Secret{
 
 ## Common Issues
 
-1. **CLI not found**: Install Confluent CLI or specify custom path
-2. **Authentication fails**: Configure Confluent CLI credentials first
-3. **JSON parsing errors**: Check CLI output format with `confluent ... --output json`
+1. **Auth invalid**: Verify API Key/Secret and BaseURL
+2. **Network issues**: Check connectivity and proxy settings
+3. **JSON parsing errors**: Validate API responses and types
 4. **Timeout errors**: Increase context timeout or check network connectivity
 
 ## Further Reading

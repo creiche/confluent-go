@@ -8,7 +8,7 @@ This directory contains the Go packages for the confluent-go project.
 Contains all data type definitions and interfaces for Confluent resources. These types are used throughout the client.
 
 ### `client/`
-Contains the core client implementation that wraps the Confluent CLI. This is the entry point for all operations.
+Contains the core REST client implementation for Confluent APIs. This is the entry point for all operations.
 
 ### `resources/`
 Contains resource-specific managers for different Confluent resource types:

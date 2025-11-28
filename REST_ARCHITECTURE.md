@@ -4,7 +4,7 @@ This document explains the REST-based architecture of confluent-go and how it wo
 
 ## Overview
 
-Instead of shelling out to the Confluent CLI, this package makes direct HTTP REST API calls to:
+This package makes direct HTTP REST API calls to:
 - **Confluent Cloud APIs** (https://api.confluent.cloud)
 - **Confluent Platform APIs** (self-hosted installations)
 
@@ -55,6 +55,27 @@ The Confluent CLI served as a reference for understanding:
 - `POST /org/v2/environments` - Create environment
 - `PATCH /org/v2/environments/{envId}` - Update environment
 - `DELETE /org/v2/environments/{envId}` - Delete environment
+
+### Schema Registry (SR API v1)
+- `GET /subjects` - List all subjects
+- `GET /subjects/{subject}/versions` - List versions for a subject
+- `GET /subjects/{subject}/versions/latest` - Get latest schema version
+- `GET /subjects/{subject}/versions/{version}` - Get specific schema version
+- `GET /schemas/ids/{id}` - Get schema by global ID
+- `POST /subjects/{subject}/versions` - Register a new schema
+- `DELETE /subjects/{subject}?permanent=true` - Delete subject (soft/hard)
+- `POST /compatibility/subjects/{subject}/versions/latest` - Test compatibility
+- `GET /config` - Get global compatibility level
+- `PUT /config` - Set global compatibility level
+- `GET /config/{subject}` - Get subject compatibility level
+- `PUT /config/{subject}` - Set subject compatibility level
+
+**Configuration:**
+- Base path: default `"/schema-registry/v1"`
+- Cloud BaseURL: `https://api.confluent.cloud`
+- On-prem BaseURL: SR URL (e.g., `https://sr.example.com`)
+- Types: prefer constants `SchemaTypeAvro|JSON|Protobuf`
+- Compatibility: prefer constants `CompatNone|Backward|BackwardTransitive|Forward|ForwardTransitive|Full|FullTransitive`
 
 ## Authentication
 
@@ -135,7 +156,7 @@ err := manager.DeleteXyz(ctx, id)
 ## Advantages of REST-Based Approach
 
 ✅ **No CLI Dependency** - Runs anywhere without Confluent CLI installed  
-✅ **Direct API Access** - Lower latency than shelling out to CLI  
+✅ **Direct API Access** - Lower latency with native HTTP calls  
 ✅ **Programmatic** - Native Go code, better integration with Go projects  
 ✅ **Type-Safe** - Strong typing with JSON marshaling  
 ✅ **Testable** - Easy to mock HTTP calls for testing  
@@ -153,15 +174,15 @@ err := manager.DeleteXyz(ctx, id)
 - Uses Platform REST APIs (may differ from Cloud APIs)
 - Check your Platform documentation for available endpoints
 
-## Differences from CLI-Based Approach
+## Architecture Overview
 
-| Aspect | CLI-Based | REST-Based |
+| Aspect | Legacy Approach | REST-Based |
 |--------|-----------|-----------|
-| External Dependencies | Confluent CLI binary required | None (pure Go) |
+| External Dependencies | External tooling required | None (pure Go) |
 | Performance | Slower (process startup overhead) | Faster (direct HTTP) |
-| Concurrency | Limited (CLI is sequential) | High (concurrent requests) |
-| Network | Depends on CLI | Direct HTTP with control |
-| Error Messages | CLI output parsing | Structured API responses |
+| Concurrency | Limited | High (concurrent requests) |
+| Network | Indirect | Direct HTTP with control |
+| Error Messages | String parsing | Structured API responses |
 
 ## Configuration Best Practices
 
