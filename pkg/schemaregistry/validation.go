@@ -163,7 +163,7 @@ func (v *ProtobufValidator) Validate(schema string) error {
 	// This is a lightweight check - full validation would require parsing .proto syntax
 	hasProtoKeyword := false
 	protoKeywords := []string{"syntax", "message", "service", "package", "enum"}
-	
+
 	for _, keyword := range protoKeywords {
 		if containsWord(schema, keyword) {
 			hasProtoKeyword = true
@@ -181,11 +181,11 @@ func (v *ProtobufValidator) Validate(schema string) error {
 // containsWord checks if a word appears in the text (simple string contains)
 func containsWord(text, word string) bool {
 	// Simple substring check - could be enhanced with regex for word boundaries
-	return len(text) > 0 && len(word) > 0 && 
-		(text[:len(word)] == word || 
-		 contains(text, " "+word) || 
-		 contains(text, "\n"+word) ||
-		 contains(text, "\t"+word))
+	return len(text) > 0 && len(word) > 0 &&
+		(text[:len(word)] == word ||
+			contains(text, " "+word) ||
+			contains(text, "\n"+word) ||
+			contains(text, "\t"+word))
 }
 
 func contains(s, substr string) bool {
