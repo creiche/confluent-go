@@ -3,6 +3,7 @@ package schemaregistry
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // Validator validates schema syntax for a specific schema type.
@@ -182,17 +183,8 @@ func (v *ProtobufValidator) Validate(schema string) error {
 func containsWord(text, word string) bool {
 	// Simple substring check - could be enhanced with regex for word boundaries
 	return len(text) > 0 && len(word) > 0 &&
-		(text[:len(word)] == word ||
-			contains(text, " "+word) ||
-			contains(text, "\n"+word) ||
-			contains(text, "\t"+word))
-}
-
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+		((len(text) >= len(word) && text[:len(word)] == word) ||
+			strings.Contains(text, " "+word) ||
+			strings.Contains(text, "\n"+word) ||
+			strings.Contains(text, "\t"+word))
 }
