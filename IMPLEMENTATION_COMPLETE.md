@@ -369,7 +369,9 @@ The package uses **HTTP Basic Authentication**:
 | IAM | v2 | Service accounts, API keys |
 | Org | v2 | Environment management |
 | Schema Registry | v1 | Schema management, validation, compatibility |
-| Kafka Connect | v1 | Connector lifecycle, configuration, monitoring |## Usage Pattern
+| Kafka Connect | v1 | Connector lifecycle, configuration, monitoring |
+
+## Usage Pattern
 
 All resource managers follow the same pattern:
 
