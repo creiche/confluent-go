@@ -29,6 +29,7 @@ package schemaregistry
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/creiche/confluent-go/pkg/client"
 )
@@ -65,7 +66,7 @@ func (m *Manager) ListSubjects(ctx context.Context) ([]string, error) {
 // GetLatestSchema returns the latest schema for a subject.
 func (m *Manager) GetLatestSchema(ctx context.Context, subject string) (*Schema, error) {
 	var s Schema
-	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/subjects/%s/versions/latest", m.basePath, subject)}
+	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/subjects/%s/versions/latest", m.basePath, url.PathEscape(subject))}
 	resp, err := m.c.Do(ctx, req)
 	if err != nil {
 		return nil, err
@@ -107,7 +108,7 @@ func (m *Manager) RegisterSchema(ctx context.Context, subject string, payload Re
 	}
 
 	var out RegisterResponse
-	req := client.Request{Method: "POST", Path: fmt.Sprintf("%s/subjects/%s/versions", m.basePath, subject), Body: payload}
+	req := client.Request{Method: "POST", Path: fmt.Sprintf("%s/subjects/%s/versions", m.basePath, url.PathEscape(subject)), Body: payload}
 	resp, err := m.c.Do(ctx, req)
 	if err != nil {
 		return 0, err
@@ -133,7 +134,7 @@ func (m *Manager) TestCompatibility(ctx context.Context, subject string, payload
 	}
 
 	var out CompatibilityResponse
-	req := client.Request{Method: "POST", Path: fmt.Sprintf("%s/compatibility/subjects/%s/versions/latest", m.basePath, subject), Body: payload}
+	req := client.Request{Method: "POST", Path: fmt.Sprintf("%s/compatibility/subjects/%s/versions/latest", m.basePath, url.PathEscape(subject)), Body: payload}
 	resp, err := m.c.Do(ctx, req)
 	if err != nil {
 		return false, err
@@ -147,7 +148,7 @@ func (m *Manager) TestCompatibility(ctx context.Context, subject string, payload
 // ListVersions lists all versions for a subject.
 func (m *Manager) ListVersions(ctx context.Context, subject string) ([]int, error) {
 	var versions []int
-	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/subjects/%s/versions", m.basePath, subject)}
+	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/subjects/%s/versions", m.basePath, url.PathEscape(subject))}
 	resp, err := m.c.Do(ctx, req)
 	if err != nil {
 		return nil, err
@@ -161,7 +162,7 @@ func (m *Manager) ListVersions(ctx context.Context, subject string) ([]int, erro
 // GetSchemaVersion fetches a specific version for a subject.
 func (m *Manager) GetSchemaVersion(ctx context.Context, subject string, version int) (*Schema, error) {
 	var s Schema
-	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/subjects/%s/versions/%d", m.basePath, subject, version)}
+	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/subjects/%s/versions/%d", m.basePath, url.PathEscape(subject), version)}
 	resp, err := m.c.Do(ctx, req)
 	if err != nil {
 		return nil, err
@@ -174,7 +175,7 @@ func (m *Manager) GetSchemaVersion(ctx context.Context, subject string, version 
 
 // DeleteSubject deletes a subject. When permanent=true a hard delete is performed.
 func (m *Manager) DeleteSubject(ctx context.Context, subject string, permanent bool) error {
-	path := fmt.Sprintf("%s/subjects/%s", m.basePath, subject)
+	path := fmt.Sprintf("%s/subjects/%s", m.basePath, url.PathEscape(subject))
 	if permanent {
 		path += "?permanent=true"
 	}
@@ -214,7 +215,7 @@ func (m *Manager) GetSubjectCompatibility(ctx context.Context, subject string) (
 	var out struct {
 		Compatibility string `json:"compatibility"`
 	}
-	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/config/%s", m.basePath, subject)}
+	req := client.Request{Method: "GET", Path: fmt.Sprintf("%s/config/%s", m.basePath, url.PathEscape(subject))}
 	resp, err := m.c.Do(ctx, req)
 	if err != nil {
 		return "", err
@@ -228,7 +229,7 @@ func (m *Manager) GetSubjectCompatibility(ctx context.Context, subject string) (
 // SetSubjectCompatibility sets compatibility level for a subject.
 func (m *Manager) SetSubjectCompatibility(ctx context.Context, subject string, level string) error {
 	body := map[string]string{"compatibility": level}
-	req := client.Request{Method: "PUT", Path: fmt.Sprintf("%s/config/%s", m.basePath, subject), Body: body}
+	req := client.Request{Method: "PUT", Path: fmt.Sprintf("%s/config/%s", m.basePath, url.PathEscape(subject)), Body: body}
 	_, err := m.c.Do(ctx, req)
 	return err
 }

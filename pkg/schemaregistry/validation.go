@@ -127,22 +127,13 @@ func (v *JSONSchemaValidator) Validate(schema string) error {
 		return fmt.Errorf("invalid JSON Schema: %w", err)
 	}
 
-	// JSON Schema should have either $schema, type, or properties
-	hasSchema := false
-	if _, ok := jsonSchema["$schema"]; ok {
-		hasSchema = true
-	}
-	if _, ok := jsonSchema["type"]; ok {
-		hasSchema = true
-	}
-	if _, ok := jsonSchema["properties"]; ok {
-		hasSchema = true
-	}
-	if _, ok := jsonSchema["$ref"]; ok {
-		hasSchema = true
-	}
+	// JSON Schema should have at least one of: $schema, type, properties, or $ref
+	_, hasSchemaField := jsonSchema["$schema"]
+	_, hasType := jsonSchema["type"]
+	_, hasProperties := jsonSchema["properties"]
+	_, hasRef := jsonSchema["$ref"]
 
-	if !hasSchema {
+	if !hasSchemaField && !hasType && !hasProperties && !hasRef {
 		return fmt.Errorf("JSON Schema missing typical fields ($schema, type, properties, or $ref)")
 	}
 
