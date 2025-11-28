@@ -16,7 +16,8 @@ confluent-go/
 │       ├── topic.go               # Topic management
 │       ├── service_account.go     # Service account & API key management
 │       ├── acl.go                 # Access control list management
-│       └── environment.go         # Environment management
+│       ├── environment.go         # Environment management
+│       └── connector.go           # Kafka Connect connector management
 ├── cmd/
 │   └── examples/                  # Example code and patterns
 │       ├── main.go                # Basic usage examples
@@ -75,6 +76,7 @@ if err := topicMgr.CreateTopic(ctx, clusterID, topic); err != nil {
 - **ServiceAccount**: Manage service accounts and their API keys
 - **ACL**: Create and manage access control lists
 - **Environment**: Create and manage environments
+- **Connector**: Create, update, pause, resume, restart, and delete Kafka Connect connectors
 
 ### Type Definitions
 All resource types are defined in `pkg/api/types.go` and include JSON tags for unmarshaling CLI output.

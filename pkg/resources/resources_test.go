@@ -411,3 +411,268 @@ func TestEnvironmentManager_DeleteEnvironment(t *testing.T) {
 		t.Fatalf("DeleteEnvironment failed: %v", err)
 	}
 }
+
+// Connector Manager Tests
+
+func TestConnectorManager_ListConnectors(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/connect/v1/environments/env-123/clusters/lcc-123/connectors" {
+			t.Errorf("Expected path /connect/v1/environments/env-123/clusters/lcc-123/connectors, got %s", r.URL.Path)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode([]string{
+			"connector-1",
+			"connector-2",
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	connectors, err := mgr.ListConnectors(context.Background(), "env-123", "lcc-123")
+	if err != nil {
+		t.Fatalf("ListConnectors failed: %v", err)
+	}
+
+	if len(connectors) != 2 {
+		t.Errorf("Expected 2 connectors, got %d", len(connectors))
+	}
+
+	if connectors[0] != "connector-1" {
+		t.Errorf("Expected first connector to be connector-1, got %s", connectors[0])
+	}
+}
+
+func TestConnectorManager_GetConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"name":   "my-connector",
+			"config": map[string]string{"connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector"},
+			"tasks":  2,
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	connector, err := mgr.GetConnector(context.Background(), "env-123", "lcc-123", "my-connector")
+	if err != nil {
+		t.Fatalf("GetConnector failed: %v", err)
+	}
+
+	if connector.Name != "my-connector" {
+		t.Errorf("Expected name my-connector, got %s", connector.Name)
+	}
+}
+
+func TestConnectorManager_CreateConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("Expected POST, got %s", r.Method)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"name": "new-connector",
+			"config": map[string]string{
+				"connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+			},
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	config := map[string]string{
+		"connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+		"tasks.max":       "1",
+	}
+
+	connector, err := mgr.CreateConnector(context.Background(), "env-123", "lcc-123", "new-connector", config)
+	if err != nil {
+		t.Fatalf("CreateConnector failed: %v", err)
+	}
+
+	if connector.Name != "new-connector" {
+		t.Errorf("Expected name new-connector, got %s", connector.Name)
+	}
+}
+
+func TestConnectorManager_UpdateConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			t.Errorf("Expected PUT, got %s", r.Method)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"name": "my-connector",
+			"config": map[string]string{
+				"tasks.max": "2",
+			},
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	config := map[string]string{
+		"tasks.max": "2",
+	}
+
+	connector, err := mgr.UpdateConnector(context.Background(), "env-123", "lcc-123", "my-connector", config)
+	if err != nil {
+		t.Fatalf("UpdateConnector failed: %v", err)
+	}
+
+	if connector.Name != "my-connector" {
+		t.Errorf("Expected name my-connector, got %s", connector.Name)
+	}
+}
+
+func TestConnectorManager_DeleteConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "DELETE" {
+			t.Errorf("Expected DELETE, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	err := mgr.DeleteConnector(context.Background(), "env-123", "lcc-123", "my-connector")
+	if err != nil {
+		t.Fatalf("DeleteConnector failed: %v", err)
+	}
+}
+
+func TestConnectorManager_GetConnectorStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"state": "RUNNING",
+			"tasks": []map[string]interface{}{
+				{"id": 0, "state": "RUNNING"},
+			},
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	status, err := mgr.GetConnectorStatus(context.Background(), "env-123", "lcc-123", "my-connector")
+	if err != nil {
+		t.Fatalf("GetConnectorStatus failed: %v", err)
+	}
+
+	if status.State != "RUNNING" {
+		t.Errorf("Expected state RUNNING, got %s", status.State)
+	}
+}
+
+func TestConnectorManager_PauseConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			t.Errorf("Expected PUT, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	err := mgr.PauseConnector(context.Background(), "env-123", "lcc-123", "my-connector")
+	if err != nil {
+		t.Fatalf("PauseConnector failed: %v", err)
+	}
+}
+
+func TestConnectorManager_ResumeConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			t.Errorf("Expected PUT, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	err := mgr.ResumeConnector(context.Background(), "env-123", "lcc-123", "my-connector")
+	if err != nil {
+		t.Fatalf("ResumeConnector failed: %v", err)
+	}
+}
+
+func TestConnectorManager_RestartConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("Expected POST, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	err := mgr.RestartConnector(context.Background(), "env-123", "lcc-123", "my-connector")
+	if err != nil {
+		t.Fatalf("RestartConnector failed: %v", err)
+	}
+}
+
+func TestConnectorManager_ListConnectorPlugins(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode([]map[string]interface{}{
+			{
+				"class":   "io.confluent.connect.jdbc.JdbcSourceConnector",
+				"type":    "SOURCE",
+				"version": "10.7.4",
+			},
+			{
+				"class":   "io.confluent.connect.s3.S3SinkConnector",
+				"type":    "SINK",
+				"version": "10.5.4",
+			},
+		}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL)
+	mgr := resources.NewConnectorManager(c)
+
+	plugins, err := mgr.ListConnectorPlugins(context.Background(), "env-123", "lcc-123")
+	if err != nil {
+		t.Fatalf("ListConnectorPlugins failed: %v", err)
+	}
+
+	if len(plugins) != 2 {
+		t.Errorf("Expected 2 plugins, got %d", len(plugins))
+	}
+}

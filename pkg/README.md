@@ -17,6 +17,7 @@ Contains resource-specific managers for different Confluent resource types:
 - `service_account.go` - Service account and API key management
 - `acl.go` - Access control list management
 - `environment.go` - Environment management
+- `connector.go` - Kafka Connect connector management (create, update, pause, resume, restart)
 
 ## Usage
 
